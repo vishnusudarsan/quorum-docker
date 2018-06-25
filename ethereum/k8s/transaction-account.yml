@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: transaction-account
+data:
+  key: |-
+    {
+      "address": "b532cfbf69c3156272fd5f9d9557ef77f19f8210",
+      "crypto": {
+        "cipher": "aes-128-ctr",
+        "ciphertext": "fe3c659a9719f38936d27ce3d0e0e6bac10ec9d0a397eeeca3b39ec8c2ef3fff",
+        "cipherparams": {
+          "iv": "0b3e8eafe98e050d17a320ce3aefd0a6"
+        },
+        "kdf": "scrypt",
+        "kdfparams": {
+          "dklen": 32,
+          "n": 262144,
+          "p": 1,
+          "r": 8,
+          "salt": "683961dfddd2057dc0f78cec9cdcdbe883807214f81056099169b95441c1ab0b"
+        },
+        "mac": "15b64bdf5e1cf2199de652c96272fa0c7b0a31041788998ee38caacd6acfaca4"
+      },
+      "id": "9d6562d9-d370-4ac3-bb7c-683299d13f73",
+      "version": 3
+    }

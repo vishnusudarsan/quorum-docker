@@ -1,0 +1,82 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: ethereum-transaction
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ethereum-transaction
+  template:
+    metadata:
+      labels:
+        app: ethereum-transaction
+    spec:
+      containers:
+      - name: ethereum-transaction
+        image: ethereum/client-go:v1.7.3
+        command: ["/bin/sh"]
+        args:
+        - "-c"
+        - "geth --bootnodes=`cat /root/.ethereum/bootnodes` --rpc --rpcapi='eth,net,web3' --rpcaddr='0.0.0.0' --rpccorsdomain='*' --ws --unlock='b532cfbf69c3156272fd5f9d9557ef77f19f8210' --password=/etc/account-password/password --networkid=5"
+        ports:
+        - name: rpc
+          containerPort: 8545
+        - name: ws
+          containerPort: 8546
+        - name: discovery-udp
+          containerPort: 30303
+          protocol: UDP
+        - name: discovery-tcp
+          containerPort: 30303
+        volumeMounts:
+        - name: data
+          mountPath: /root/.ethereum
+        - name: account-password
+          mountPath: /etc/account-password
+      initContainers:
+      - name: init-genesis
+        image: ethereum/client-go:v1.7.3
+        args:
+        - "init"
+        - "/var/geth/genesis.json"
+        volumeMounts:
+        - name: data
+          mountPath: /root/.ethereum
+        - name: config
+          mountPath: /var/geth
+      - name: setup-account
+        image: ethereum/client-go:v1.7.3
+        command: ["/bin/sh"]
+        args:
+        - "-c"
+        - "cp /etc/account-key/key /root/.ethereum/keystore/transaction-account"
+        volumeMounts:
+        - name: data
+          mountPath: /root/.ethereum
+        - name: account-key
+          mountPath: /etc/account-key
+      - name: get-bootnodes
+        image: ethereum/client-go:v1.7.3
+        command: ["/bin/sh"]
+        args:
+        - "-c"
+        - |-
+          while ! nc -z -w 2 ethereum-bootnode 80; do echo 'Waiting for bootnode service...'; sleep 5; done
+          while [ -z "$(nc -w 2 ethereum-bootnode 80)" ]; do echo 'Waiting for bootnode address...'; sleep 5; done
+          nc ethereum-bootnode 80 | tee /geth/bootnodes
+        volumeMounts:
+        - name: data
+          mountPath: /geth
+      volumes:
+      - name: data
+        emptyDir: {}
+      - name: config
+        configMap:
+          name: ethereum-config
+      - name: account-key
+        configMap:
+          name: transaction-account
+      - name: account-password
+        secret:
+          secretName: transaction-account-password

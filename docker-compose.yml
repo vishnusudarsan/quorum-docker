@@ -1,0 +1,133 @@
+version: '3'
+services:
+
+  bootnode:
+    image: quorum:latest
+    volumes:
+      - ./ethereum/docker-compose/genesis.json:/etc/ethereum/genesis.json:ro
+      - ./ethereum/docker-compose/bootnode/docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
+    entrypoint: [ "docker-entrypoint.sh" ]
+    networks:
+      - private
+    logging:
+      options:
+        max-size: 10m
+
+  constellation-bootnode:
+    image: constellation:latest
+    command: --port=9001 --url=https://constellation-bootnode:9001/
+    networks:
+      - private
+    logging:
+      options:
+        max-size: 10m
+
+  basenode-constellation:
+    image: constellation:latest
+    command: --url=https://basenode-constellation:9001/ --port=9001 --socket=/var/run/constellation.ipc --othernodes=https://constellation-bootnode:9001/ --publickeys=certs/node.pub --privatekeys=certs/node.key
+    depends_on:
+      - constellation-bootnode
+    volumes:
+      - basenode-constellation-socket:/var/run
+      - ./ethereum/docker-compose/constellation-keys/basenode:/var/data/certs:delegated
+    networks:
+      - private
+    logging:
+      options:
+        max-size: 10m
+
+  node-a-constellation:
+    image: constellation:latest
+    command: --url=https://node-a-constellation:9001/ --port=9001 --socket=/var/run/constellation.ipc --othernodes=https://constellation-bootnode:9001/ --publickeys=certs/node.pub --privatekeys=certs/node.key
+    depends_on:
+      - basenode-constellation
+    volumes:
+      - ./ethereum/docker-compose/constellation-keys/node-a:/var/data/certs:cached
+      - node-a-constellation-socket:/var/run
+    networks:
+      - private
+    logging:
+      options:
+        max-size: 10m
+
+  node-b-constellation:
+    image: constellation:latest
+    command: --url=https://node-b-constellation:9001/ --port=9001 --socket=/var/run/constellation.ipc --othernodes=https://constellation-bootnode:9001/ --publickeys=certs/node.pub --privatekeys=certs/node.key
+    depends_on:
+      - constellation-bootnode
+    volumes:
+      - ./ethereum/docker-compose/constellation-keys/node-b:/var/data/certs:cached
+      - node-b-constellation-socket:/var/run
+    networks:
+      - private
+    logging:
+      options:
+        max-size: 10m
+
+  basenode-quorum:
+    image: quorum:latest
+    volumes:
+      - ./ethereum/docker-compose/genesis.json:/etc/ethereum/genesis.json:ro
+      - ./ethereum/docker-compose/docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
+      - ./ethereum/docker-compose/keystore/basenode:/root/.ethereum/keystore/basenode:ro
+      - ./ethereum/docker-compose/nodekeys/basenode:/root/.ethereum/geth/nodekey
+      - basenode-constellation-socket:/var/run
+    entrypoint: [ "docker-entrypoint.sh" ]
+    depends_on:
+      - bootnode
+      - basenode-constellation
+    networks:
+      - private
+    logging:
+      options:
+        max-size: 10m
+
+  node-a-quorum:
+    image: quorum:latest
+    volumes:
+      - ./ethereum/docker-compose/genesis.json:/etc/ethereum/genesis.json:ro
+      - ./ethereum/docker-compose/docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
+      - ./ethereum/docker-compose/keystore/node-a:/root/.ethereum/keystore/node-a:ro
+      - ./ethereum/docker-compose/nodekeys/node-a:/root/.ethereum/geth/nodekey
+      - node-a-constellation-socket:/var/run
+    entrypoint: [ "docker-entrypoint.sh" ]
+    depends_on:
+      - bootnode
+      - node-a-constellation
+    networks:
+      - private
+    logging:
+      options:
+        max-size: 10m
+
+  node-b-quorum:
+    image: quorum:latest
+    volumes:
+      - ./ethereum/docker-compose/genesis.json:/etc/ethereum/genesis.json:ro
+      - ./ethereum/docker-compose/docker-entrypoint.sh:/usr/local/bin/docker-entrypoint.sh:ro
+      - ./ethereum/docker-compose/keystore/node-b:/root/.ethereum/keystore/node-b:ro
+      - ./ethereum/docker-compose/nodekeys/node-b:/root/.ethereum/geth/nodekey
+      - node-b-constellation-socket:/var/run
+    entrypoint: [ "docker-entrypoint.sh" ]
+    depends_on:
+      - bootnode
+      - node-b-constellation
+    networks:
+      - private
+    logging:
+      options:
+        max-size: 10m
+
+networks:
+  public:
+  private:
+    driver: bridge
+    internal: true
+
+volumes:
+  basenode-constellation-socket:
+  basenode-constellation-certs:
+  node-a-constellation-socket:
+  node-a-constellation-certs:
+  node-b-constellation-socket:
+  node-b-constellation-certs:

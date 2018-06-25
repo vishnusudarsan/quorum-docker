@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: miner-account
+data:
+  key: |-
+    {
+      "address": "908012cc39a931b7eace6352e5ec9735f2624603",
+      "crypto": {
+        "cipher": "aes-128-ctr",
+        "ciphertext": "2ecd627390b2cb0732755dbc98d32d8f4d7eccd33bbf4491fbe3ec8bd3d4e93b",
+        "cipherparams": {
+          "iv": "30449d06378ba8bdaeb81d6abb581268"
+        },
+        "kdf": "scrypt",
+        "kdfparams": {
+          "dklen": 32,
+          "n": 262144,
+          "p": 1,
+          "r": 8,
+          "salt": "dae61bde3f22bd794afd691608d9d2ed2acd3997b6c034eec787918b0153870a"
+        },
+        "mac": "821f5fde22a01404f9954f8b27bfa0b2a5d5d920e501eeab63b47f4e7f47dacb"
+      },
+      "id": "c1fa1b10-2eec-4084-b3c0-02cf64334b40",
+      "version": 3
+    }

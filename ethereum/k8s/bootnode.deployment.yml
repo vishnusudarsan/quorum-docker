@@ -1,0 +1,55 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: ethereum-bootnode
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ethereum-bootnode
+  template:
+    metadata:
+      labels:
+        app: ethereum-bootnode
+    spec:
+      containers:
+      - name: bootnode
+        image: ethereum/client-go:alltools-v1.7.3
+        command: ["bootnode"]
+        args:
+        - "--nodekey=/etc/bootnode/node.key"
+        volumeMounts:
+        - name: data
+          mountPath: /etc/bootnode
+        ports:
+        - name: discovery
+          containerPort: 30301
+          protocol: UDP
+      - name: bootnode-server
+        image: ethereum/client-go:alltools-v1.7.3
+        command: ["/bin/sh"]
+        args:
+        - "-c"
+        - "while true; do echo \"enode://$(bootnode -writeaddress --nodekey=/etc/bootnode/node.key)@${POD_IP}:30301\" | nc -lvp 80; done;"
+        volumeMounts:
+        - name: data
+          mountPath: /etc/bootnode
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        ports:
+        - containerPort: 80
+      initContainers:
+      - name: genkey
+        image: ethereum/client-go:alltools-v1.7.3
+        command: ["bootnode"]
+        args:
+        - "--genkey=/etc/bootnode/node.key"
+        volumeMounts:
+        - name: data
+          mountPath: /etc/bootnode
+      volumes:
+      - name: data
+        emptyDir: {}

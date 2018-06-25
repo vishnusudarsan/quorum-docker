@@ -1,0 +1,12 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: ethereum-transaction
+spec:
+  selector:
+    app: ethereum-transaction
+  ports:
+  - name: rpc
+    port: 8545
+  - name: ws
+    port: 8546
